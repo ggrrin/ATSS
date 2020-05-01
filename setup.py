@@ -27,6 +27,24 @@ requirements = [
 def get_extensions():
     extensions_dir = os.path.join("atss_core", "csrc")
 
+    import shutil
+    import torch.utils.cpp_extension as ext
+    ninja_original = ext._write_ninja_file_and_compile_objects
+    print("X!", ninja_original)
+
+    def ninja_patch(sources, objects, cflags, post_cflags, cuda_cflags, cuda_post_cflags, build_directory, verbose, with_cuda):
+        #headers = glob.glob(os.path.join(extensions_dir, "*.h"))
+        headers = glob.glob(os.path.join(extensions_dir, "cpu/*.h"))
+        for header in headers:
+            print("x", header, os.path.join(build_directory, header))
+            shutil.copyfile(header, os.path.join(build_directory, header))
+        
+        print("X2", ninja_original)
+        return ninja_original(sources, objects, cflags, post_cflags, cuda_cflags, cuda_post_cflags, build_directory, verbose, with_cuda)
+
+    ext._write_ninja_file_and_compile_objects = ninja_patch
+
+
     main_file = glob.glob(os.path.join(extensions_dir, "*.cpp"))
     source_cpu = glob.glob(os.path.join(extensions_dir, "cpu", "*.cpp"))
     source_cuda = glob.glob(os.path.join(extensions_dir, "cuda", "*.cu"))
@@ -61,7 +79,6 @@ def get_extensions():
     ]
 
     return ext_modules
-
 
 setup(
     name="atss",
